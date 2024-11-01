@@ -24,32 +24,26 @@ export const locations = {
   
   export const requiredItems = {
     firstAid: {
-      'Adhesive Bandages (Assorted)': 20,
-      'Sterile Gauze Pads (4x4)': 10,
-      'Medical Tape': 2,
-      'Scissors': 1,
-      'Disposable Gloves (Pairs)': 10,
-      'Antiseptic Wipes': 15,
-      'Emergency Blanket': 1,
-      'First Aid Guide': 1,
-      'CPR Face Shield': 1,
-      'Tweezers': 1,
-      'Triangular Bandages': 2,
+      'Eye Pads': 2,
+      'Saline Eye Wash': 5,
+      'Plasters (Box)': 1,
+      'Small Bandages': 2,
+      'Medium Bandages': 6,
+      'Large Bandages': 2,
+      'Nitrile Gloves (Pairs)': 3,
+      'Microporous Tape': 1,
       'Safety Pins': 6,
-      'Eye Wash Solution': 1,
-      'Instant Cold Pack': 2
+      'Triangular Bandage': 2,
+      'Shears': 1,
+      'Antiseptic Wipes': 5
     },
     burns: {
-      'Burn Dressings (Various Sizes)': 6,
-      'Non-stick Sterile Dressings': 8,
-      'Burn Gel Sachets': 4,
-      'Clean Plastic Bags': 2,
-      'Disposable Gloves (Pairs)': 6,
-      'Scissors': 1,
-      'Medical Tape': 2,
-      'Burn Treatment Guide': 1,
-      'Sterile Saline Solution': 2,
-      'Gauze Bandages': 4,
-      'Conforming Bandages': 3
+      'Burns Dressing 10x10': 2,
+      'Burns Dressing 20x20': 2,
+      'Low Adherent Dressing': 4,
+      'Burn Gel': 5,
+      'Nitrile Gloves (Pairs)': 3,
+      'Conforming Bandages': 6,
+      'Safety Pins': 6
     }
   };
