@@ -200,6 +200,87 @@
   .analysis-content {
     margin-top: 1rem;
   }
+
+  .item-group {
+    margin-bottom: 2rem;
+  }
+  
+  .group-title {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+  }
+  
+  /* First Aid Kit Styles */
+  .alert-firstaid {
+    background-color: rgba(40, 167, 69, 0.1);
+    border: 1px solid rgba(40, 167, 69, 0.2);
+    color: #155724;
+  }
+  
+  .title-firstaid {
+    color: #28a745;
+  }
+  
+  /* Burns Kit Styles */
+  .alert-burns {
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.2);
+    color: #721c24;
+  }
+  
+  .title-burns {
+    color: #dc3545;
+  }
+  
+  /* Both Kits Styles */
+  .alert-both {
+    background-color: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.2);
+    color: #856404;
+  }
+  
+  .title-both {
+    color: #ffc107;
+  }
+  
+  /* Dark mode support */
+  @media (prefers-color-scheme: dark) {
+    .group-title {
+      border-bottom-color: #404040;
+    }
+  
+    .alert-firstaid {
+      background-color: rgba(40, 167, 69, 0.2);
+      border-color: rgba(40, 167, 69, 0.3);
+      color: #98f5c4;
+    }
+  
+    .title-firstaid {
+      color: #4dff4d;
+    }
+  
+    .alert-burns {
+      background-color: rgba(220, 53, 69, 0.2);
+      border-color: rgba(220, 53, 69, 0.3);
+      color: #ffb3b3;
+    }
+  
+    .title-burns {
+      color: #ff6666;
+    }
+  
+    .alert-both {
+      background-color: rgba(255, 193, 7, 0.2);
+      border-color: rgba(255, 193, 7, 0.3);
+      color: #ffe699;
+    }
+  
+    .title-both {
+      color: #ffd700;
+    }
+  }
   
   /* Responsive Design */
   @media (min-width: 768px) {

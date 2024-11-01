@@ -4,6 +4,32 @@ import { locations, requiredItems } from '../data/constants';
 const AnalysisView = ({ inventoryData, setShowAnalysis }) => {
   const [activeTab, setActiveTab] = useState('overall');
 
+  // Helper function to determine item type and get corresponding styles
+  const getItemTypeStyles = (item) => {
+    const inFirstAid = item in requiredItems.firstAid;
+    const inBurns = item in requiredItems.burns;
+    
+    if (inFirstAid && inBurns) {
+      return {
+        type: 'Both Kits',
+        className: 'alert-both',
+        titleClass: 'title-both'
+      };
+    } else if (inFirstAid) {
+      return {
+        type: 'First Aid Kit',
+        className: 'alert-firstaid',
+        titleClass: 'title-firstaid'
+      };
+    } else {
+      return {
+        type: 'Burns Kit',
+        className: 'alert-burns',
+        titleClass: 'title-burns'
+      };
+    }
+  };
+
   const getLocationInventoryStatus = () => {
     const status = {
       overall: {},
@@ -63,17 +89,37 @@ const AnalysisView = ({ inventoryData, setShowAnalysis }) => {
       );
     }
 
-    return Object.entries(items).map(([item, data]) => (
-      <div key={item} className="alert warning">
-        <h3>{item} - Missing {data.missing} total</h3>
-        <ul className="location-list">
-          {data.locations.map((loc, idx) => (
-            <li key={idx}>
-              {isOverall ? `${loc.building} - ${loc.area}` : loc.area}: 
-              Missing {loc.missing}
-            </li>
-          ))}
-        </ul>
+    // Group items by type
+    const groupedItems = Object.entries(items).reduce((acc, [item, data]) => {
+      const { type } = getItemTypeStyles(item);
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push([item, data]);
+      return acc;
+    }, {});
+
+    return Object.entries(groupedItems).map(([type, itemsList]) => (
+      <div key={type} className="item-group">
+        <h3 className="group-title">{type}</h3>
+        {itemsList.map(([item, data]) => {
+          const { className, titleClass } = getItemTypeStyles(item);
+          return (
+            <div key={item} className={`alert ${className}`}>
+              <h3 className={titleClass}>
+                {item} - Missing {data.missing} total
+              </h3>
+              <ul className="location-list">
+                {data.locations.map((loc, idx) => (
+                  <li key={idx}>
+                    {isOverall ? `${loc.building} - ${loc.area}` : loc.area}: 
+                    Missing {loc.missing}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </div>
     ));
   };
