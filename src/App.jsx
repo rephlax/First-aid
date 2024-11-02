@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LocationSelector from './components/LocationSelector';
 import InventoryForm from './components/InventoryForm';
 import AnalysisView from './components/AnalysisView';
+import UpdateHistory from './components/UpdateHistory';
 import { locations, requiredItems } from './data/constants';
 import './styles/styles.css';
 
@@ -38,7 +39,67 @@ function App() {
     localStorage.setItem('updateHistory', JSON.stringify(updateHistory));
   }, [updateHistory]);
 
-  // Validation Functions
+  // Update inventory with history tracking
+  const updateInventoryWithTracking = (locationId, newData) => {
+    const oldData = inventoryData[locationId] || {};
+    const changes = [];
+    
+    // Compare old and new values to track changes
+    Object.entries(newData).forEach(([item, newValue]) => {
+      const oldValue = oldData[item] || 0;
+      newValue = parseInt(newValue) || 0;
+      
+      if (newValue !== oldValue) {
+        changes.push({
+          item,
+          oldValue,
+          newValue,
+          changeType: oldValue === 0 ? 'initial' : newValue === 0 ? 'removed' : 'updated'
+        });
+      }
+    });
+
+    // Update inventory
+    setInventoryData(prev => ({
+      ...prev,
+      [locationId]: newData
+    }));
+
+    // Only add to history if there are changes
+    if (changes.length > 0) {
+      const timestamp = new Date().toISOString();
+      setUpdateHistory(prev => ({
+        ...prev,
+        [locationId]: [
+          ...(prev[locationId] || []).slice(0, 19), // Keep last 20 updates
+          {
+            timestamp,
+            type: prev[locationId]?.length ? 'Update' : 'Initial Entry',
+            changes
+          }
+        ]
+      }));
+    }
+  };
+
+  // Data management functions
+  const clearAllData = () => {
+    if (window.confirm('Are you sure you want to clear all inventory data? This cannot be undone.')) {
+      setInventoryData({});
+      setUpdateHistory({});
+      localStorage.removeItem('firstAidInventory');
+      localStorage.removeItem('updateHistory');
+    }
+  };
+
+  const getLastUpdated = (locationId) => {
+    const history = updateHistory[locationId];
+    if (!history?.length) return 'Never checked';
+    const lastUpdate = new Date(history[history.length - 1].timestamp);
+    return lastUpdate.toLocaleDateString() + ' ' + lastUpdate.toLocaleTimeString();
+  };
+
+  // Data validation functions
   const validateDataStructure = (data) => {
     const requiredFields = ['inventory', 'history', 'exportDate'];
     const missingFields = requiredFields.filter(field => !data.hasOwnProperty(field));
@@ -100,7 +161,7 @@ function App() {
     });
   };
 
-  // Import/Export Functions
+  // Import/Export functions
   const exportData = () => {
     try {
       const dataToExport = {
@@ -164,85 +225,14 @@ function App() {
     }
   };
 
-  // Inventory Update Functions
-  const updateInventoryWithTracking = (locationId, newData) => {
-    const oldData = inventoryData[locationId] || {};
-    const changes = [];
-    
-    Object.entries(newData).forEach(([item, newValue]) => {
-      const oldValue = oldData[item] || 0;
-      if (newValue !== oldValue) {
-        changes.push({
-          item,
-          oldValue,
-          newValue,
-          changeType: oldValue === 0 ? 'initial' : newValue === 0 ? 'removed' : 'updated'
-        });
-      }
-    });
-
-    setInventoryData(prev => ({
-      ...prev,
-      [locationId]: newData
-    }));
-
-    if (changes.length > 0) {
-      const timestamp = new Date().toISOString();
-      setUpdateHistory(prev => ({
-        ...prev,
-        [locationId]: [
-          ...(prev[locationId] || []).slice(0, 19),
-          {
-            timestamp,
-            type: prev[locationId]?.length ? 'Update' : 'Initial Entry',
-            changes
-          }
-        ]
-      }));
-    }
-  };
-
-  // Utility Functions
-  const clearAllData = () => {
-    if (window.confirm('Are you sure you want to clear all inventory data? This cannot be undone.')) {
-      setInventoryData({});
-      setUpdateHistory({});
-      localStorage.removeItem('firstAidInventory');
-      localStorage.removeItem('updateHistory');
-    }
-  };
-
-  const getLastUpdated = (locationId) => {
-    const history = updateHistory[locationId];
-    if (!history?.length) return 'Never checked';
-    const lastUpdate = new Date(history[history.length - 1].timestamp);
-    return lastUpdate.toLocaleDateString() + ' ' + lastUpdate.toLocaleTimeString();
-  };
-
-  const isDataValid = () => {
-    try {
-      validateInventoryData(inventoryData);
-      validateHistoryData(updateHistory);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
   // UI Components
   const DataTransfer = () => (
     <div className="data-transfer">
       <h3>Data Transfer</h3>
-      <div className="validation-status">
-        <div className={`status-indicator ${isDataValid() ? 'valid' : 'invalid'}`}>
-          Current Data Status: {isDataValid() ? 'Valid' : 'Has Issues'}
-        </div>
-      </div>
       <div className="transfer-buttons">
         <button 
           className="button export-button" 
           onClick={exportData}
-          disabled={!isDataValid()}
         >
           Export Data
         </button>
@@ -286,53 +276,14 @@ function App() {
   return (
     <div className="container">
       {showUpdateHistory ? (
-        <div>
-          <div className="card">
-            <h2 className="title">Update History</h2>
-            <div className="history-filters">
-              <select 
-                value={historyFilter.building} 
-                onChange={(e) => setHistoryFilter(prev => ({ ...prev, building: e.target.value }))}
-                className="filter-select"
-              >
-                <option value="all">All Buildings</option>
-                <option value="ks">Knight Suite</option>
-                <option value="mh">Main House</option>
-                <option value="spa">Spa</option>
-              </select>
-
-              <select 
-                value={historyFilter.timeFrame} 
-                onChange={(e) => setHistoryFilter(prev => ({ ...prev, timeFrame: e.target.value }))}
-                className="filter-select"
-              >
-                <option value="all">All Time</option>
-                <option value="today">Today</option>
-                <option value="week">Past Week</option>
-                <option value="month">Past Month</option>
-              </select>
-
-              <select 
-                value={historyFilter.changeType} 
-                onChange={(e) => setHistoryFilter(prev => ({ ...prev, changeType: e.target.value }))}
-                className="filter-select"
-              >
-                <option value="all">All Changes</option>
-                <option value="initial">Initial Entries</option>
-                <option value="updated">Updates</option>
-                <option value="removed">Removals</option>
-              </select>
-            </div>
-            <button 
-              className="button secondary"
-              onClick={() => setShowUpdateHistory(false)}
-            >
-              Back to Inventory
-            </button>
-          </div>
-        </div>
+        <UpdateHistory
+          updateHistory={updateHistory}
+          historyFilter={historyFilter}
+          setHistoryFilter={setHistoryFilter}
+          setShowUpdateHistory={setShowUpdateHistory}
+        />
       ) : showAnalysis ? (
-        <div>
+        <>
           {renderLastUpdated()}
           <AnalysisView 
             inventoryData={inventoryData}
@@ -346,9 +297,9 @@ function App() {
           >
             Clear All Data
           </button>
-        </div>
+        </>
       ) : showInventory ? (
-        <div>
+        <>
           {renderLastUpdated()}
           <InventoryForm
             selectedBuilding={selectedBuilding}
@@ -359,9 +310,9 @@ function App() {
             setShowAnalysis={setShowAnalysis}
           />
           <DataTransfer />
-        </div>
+        </>
       ) : (
-        <div>
+        <>
           {renderLastUpdated()}
           <LocationSelector
             selectedBuilding={selectedBuilding}
@@ -377,7 +328,7 @@ function App() {
           >
             Clear All Data
           </button>
-        </div>
+        </>
       )}
     </div>
   );
