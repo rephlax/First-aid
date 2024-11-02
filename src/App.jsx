@@ -229,11 +229,154 @@ function App() {
     return lastUpdate.toLocaleDateString() + ' ' + lastUpdate.toLocaleTimeString();
   };
 
+// Add these functions in the App.jsx where the comment says "// Data Validation Functions"
+
   // Data Validation Functions
-  // ... [Previous validation functions remain the same]
+  const validateDataStructure = (data) => {
+    const requiredFields = ['inventory', 'history', 'exportDate'];
+    const missingFields = requiredFields.filter(field => !data.hasOwnProperty(field));
+    
+    if (missingFields.length > 0) {
+      throw new Error(`Invalid data format: Missing required fields: ${missingFields.join(', ')}`);
+    }
+    
+    if (typeof data.exportDate !== 'string' || isNaN(Date.parse(data.exportDate))) {
+      throw new Error('Invalid export date format');
+    }
+  };
+
+  const validateInventoryData = (inventory) => {
+    if (typeof inventory !== 'object' || inventory === null) {
+      throw new Error('Invalid inventory data format');
+    }
+
+    Object.entries(inventory).forEach(([locationId, items]) => {
+      const locationExists = Object.values(locations).flat().some(loc => loc.id === locationId);
+      if (!locationExists) {
+        throw new Error(`Invalid location ID: ${locationId}`);
+      }
+
+      if (typeof items !== 'object' || items === null) {
+        throw new Error(`Invalid items format for location: ${locationId}`);
+      }
+
+      Object.entries(items).forEach(([itemName, quantity]) => {
+        if (typeof quantity !== 'number' || quantity < 0) {
+          throw new Error(`Invalid quantity for item "${itemName}" in location ${locationId}`);
+        }
+      });
+    });
+  };
+
+  const validateHistoryData = (history) => {
+    if (typeof history !== 'object' || history === null) {
+      throw new Error('Invalid history data format');
+    }
+
+    Object.entries(history).forEach(([locationId, updates]) => {
+      if (!Array.isArray(updates)) {
+        throw new Error(`Invalid history format for location: ${locationId}`);
+      }
+
+      updates.forEach((update, index) => {
+        if (!update.timestamp || !update.type || !Array.isArray(update.changes)) {
+          throw new Error(`Invalid update format at index ${index} for location ${locationId}`);
+        }
+
+        if (isNaN(Date.parse(update.timestamp))) {
+          throw new Error(`Invalid timestamp format at index ${index} for location ${locationId}`);
+        }
+
+        update.changes.forEach((change, changeIndex) => {
+          if (!change.item || typeof change.newValue !== 'number' || 
+              typeof change.oldValue !== 'number' || !change.changeType) {
+            throw new Error(`Invalid change format at index ${changeIndex} in update ${index}`);
+          }
+        });
+      });
+    });
+  };
 
   // Import/Export Functions
-  // ... [Previous import/export functions remain the same]
+  const exportData = () => {
+    try {
+      const dataToExport = {
+        inventory: inventoryData,
+        history: updateHistory,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+      };
+
+      validateInventoryData(dataToExport.inventory);
+      validateHistoryData(dataToExport.history);
+
+      const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `first-aid-inventory-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert(`Error exporting data: ${error.message}`);
+    }
+  };
+
+  const importData = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          
+          // Validate data structure and format
+          validateDataStructure(importedData);
+          validateInventoryData(importedData.inventory);
+          validateHistoryData(importedData.history);
+
+          const importDate = new Date(importedData.exportDate);
+          const currentData = localStorage.getItem('firstAidInventory');
+          
+          if (currentData) {
+            const currentDate = new Date(JSON.parse(currentData).exportDate || 0);
+            if (importDate < currentDate) {
+              if (!window.confirm('The imported data is older than your current data. Continue?')) {
+                return;
+              }
+            }
+          }
+
+          // Show import summary
+          const summary = {
+            locations: Object.keys(importedData.inventory).length,
+            totalItems: Object.values(importedData.inventory).reduce((sum, items) => 
+              sum + Object.keys(items).length, 0),
+            historyEntries: Object.values(importedData.history).reduce((sum, updates) => 
+              sum + updates.length, 0)
+          };
+
+          const confirmMessage = 
+            `Import Summary:\n` +
+            `- Locations: ${summary.locations}\n` +
+            `- Total Items: ${summary.totalItems}\n` +
+            `- History Entries: ${summary.historyEntries}\n\n` +
+            `This will replace all current data. Continue?`;
+
+          if (window.confirm(confirmMessage)) {
+            setInventoryData(importedData.inventory);
+            setUpdateHistory(importedData.history);
+            alert('Data imported successfully!');
+          }
+        } catch (error) {
+          alert(`Error importing data: ${error.message}`);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
 
   // UI Components
   const DataTransfer = () => (
