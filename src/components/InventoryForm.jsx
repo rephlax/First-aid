@@ -13,13 +13,14 @@ const InventoryForm = ({
   const itemsToCheck = requiredItems[selectedAreaInfo.type];
 
   const handleInputChange = (item, value) => {
-    setInventoryData(prev => ({
-      ...prev,
-      [selectedArea]: {
-        ...prev[selectedArea],
-        [item]: parseInt(value) || 0
-      }
-    }));
+    // Create a new object with updated values for this location
+    const newLocationData = {
+      ...(inventoryData[selectedArea] || {}),
+      [item]: parseInt(value) || 0
+    };
+
+    // Pass the new data to the parent component
+    setInventoryData(selectedArea, newLocationData);
   };
 
   return (
